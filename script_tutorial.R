@@ -221,3 +221,26 @@ mod4c <- brm(bf(mca_pi ~ week + (1|id), quantile=0.95), data=datos2, family="asy
 report(mod4c)
 
 ##############Modelo de regresión ordinal
+datos3 <- read.csv2("base3.csv")
+datos3 <- nice_names(datos3)
+datos3$staie_o <- ordered(datos3$staie)
+
+mod5 <- brm(staie_o ~ time * traumatizada + edad + (1|codigo), data=datos3, family="cumulative", prior=set_prior("normal(0, 10)", class="b"))
+report(mod5)
+
+marginal_effects(mod5)  #Cuidado!
+
+
+par(mfrow=c(2,1))
+par(mar=c(3, 5, 2, 1))
+a<-predict(mod5, newdata = data.frame(time=c(1,2,3), traumatizada=1, edad=mean(datos3$edad)), re_formula = NA)
+image(a, xaxt="n", yaxt="n", col=colorRampPalette(c("gray", "darkred"))(12))
+axis(1, at=c(0, 0.5, 1), labels=c("T1", "T2", "T3"))
+axis(2, at=seq(0,1, length.out=19), seq(1, 38, 2), las=1)
+title("Traumatizada=1")
+
+b<-predict(mod5, newdata = data.frame(time=c(1,2,3), traumatizada=0, edad=mean(datos3$edad)), re_formula = NA)
+image(b, xaxt="n", yaxt="n", col=colorRampPalette(c("gray", "darkred"))(12))
+axis(1, at=c(0, 0.5, 1), labels=c("T1", "T2", "T3"))
+axis(2, at=seq(0,1, length.out=19), seq(1, 38, 2), las=1)
+title("Traumatizada=0")
