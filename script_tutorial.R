@@ -200,12 +200,13 @@ descriptive(datos2)
 
 plot(mca_pi ~ week, data=datos2)
 
-#Estamos interesados en determinar valores por encima de lo normal. Podemos estimar el percentil 95
+#Estamos interesados en determinar valores por encima de lo normal. 
+#Podemos estimar el percentil 95
 library(quantreg)
 mod4 <- rq(mca_pi ~ week, data=datos2, tau=0.95)
 report(mod4)  #Bug en clickR
 summary(mod4, se="rank")
-
+summary(mod4, covariance = TRUE)
 
 #Y en bayesiano
 mod4b <- brm(bf(mca_pi ~ week, quantile=0.95), data=datos2, family="asym_laplace")
