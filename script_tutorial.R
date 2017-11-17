@@ -195,7 +195,7 @@ datos2 <- read.csv2("base2.csv")
 names(datos2)
 descriptive(datos2)
 
-datos2 <- datos2[datos2$age<50 & datos2$week<44,]
+datos2 <- datos2[datos2$week<44,]
 descriptive(datos2)
 
 plot(mca_pi ~ week, data=datos2)
