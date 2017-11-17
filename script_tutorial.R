@@ -213,33 +213,32 @@ report(mod3)
 ######Modelo de regresión de percentiles
 datos2 <- read.csv2("base2.csv")
 
-names(datos2)
 descriptive(datos2)
 
 datos2 <- datos2[datos2$week < 44,]
 descriptive(datos2)
 
-plot(mca_pi ~ week, data=datos2)
+plot(mca_psv ~ week, data=datos2)
 
 #Estamos interesados en determinar valores por encima de lo normal. 
 #Podemos estimar el percentil 95
 library(quantreg)
-mod4 <- rq(mca_pi ~ week + I(week^2), data = datos2, tau = 0.95)
+mod4 <- rq(mca_psv ~ week, data = datos2, tau = 0.95)
 report(mod4)
 lines(seq(19, 41, 0.1), predict(mod4, data.frame(week = seq(19, 41, 0.1))),
       lty = 2, col = "red", lwd = 2)
 
 #Y en bayesiano
-mod4b <- brm(bf(mca_pi ~ week + I(week^2), quantile=0.95), data=datos2, 
-             prior = set_prior("normal(0, 10)", class = "b"),
+mod4b <- brm(bf(mca_psv ~ week, quantile=0.95), data=datos2, 
              family="asym_laplace")
 report(mod4b)
-make_stancode(bf(mca_pi ~ week + I(week^2), quantile=0.95), data=datos2, family="asym_laplace")
+
+make_stancode(bf(mca_psv ~ week, quantile=0.95), data=datos2, family="asym_laplace")
 
 #pero volvemos a tener que las observaciones no son independientes. Añadimos factor aleatorio.
 #Vamos a meter una previa para la desviación estándar del factor aleatorio y otra para el coeficiente
 #de la variable week
-mod4c <- brm(bf(mca_pi ~ week + (1|id), quantile=0.95), data=datos2, family="asym_laplace",
+mod4c <- brm(bf(mca_psv ~ week + (1|id), quantile=0.95), data=datos2, family="asym_laplace",
              prior=c(set_prior("cauchy(0,2)", class = "sd"),
                      set_prior("student_t(5, 0, 10)", class = "b")), cores=4)
 report(mod4c)
@@ -253,7 +252,8 @@ library(ordinal)
 mod5 <- clmm(staie_o ~ time * traumatizada + edad + (1|codigo), data=datos3)
 report(mod5)
 
-mod5b <- brm(staie_o ~ time * traumatizada + edad + (1|codigo), data=datos3, family="cumulative", prior=set_prior("normal(0, 10)", class="b"))
+mod5b <- brm(staie_o ~ time * traumatizada + edad + (1|codigo), data=datos3, 
+             family="cumulative", prior=set_prior("normal(0, 10)", class="b"))
 report(mod5b)
 
 marginal_effects(mod5b)  #Cuidado!
