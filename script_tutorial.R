@@ -5,6 +5,7 @@
 #Todos los usuarios
 install.packages("brms")
 install.packages("clickR")
+devtools::install_github("David-Hervas/clickR")  #Última versión (corrige bug en report.rq())
 
 ####Carga de paquetes
 library(brms)
@@ -16,14 +17,14 @@ mtcars <- fix.factors(mtcars)
 descriptive(mtcars)
 
 #Modelo lineal mediante lm
-mod1 <- lm(mpg ~ hp + disp + gear + am, data=mtcars)
+mod1 <- lm(mpg ~ hp + disp + gear + am, data = mtcars)
 summary(mod1)  #Summary estándar de R
 summary1 <- report(mod1)
 summary1$coefficients
 summary1$upper.int
 
 #Gráfico de los coeficientes
-par(mar=c(5, 8, 3, 2))
+par(mar = c(5, 8, 3, 2))
 plot(summary1)
 
 
@@ -60,35 +61,40 @@ sink()
 library(rstan)
 library(coda)
 #the model
-X <- model.matrix(~ hp + disp + gear + am, data=mtcars)
+X <- model.matrix(~ hp + disp + gear + am, data = mtcars)
 y <- mtcars$mpg
 
-m_norm<-stan(file="lmbayes.stan",data = list(N=dim(mtcars)[1],K=6,y=y,X=X),pars = c("beta","sigma"))
+m_norm<-stan(file = "lmbayes.stan", data = list(N = dim(mtcars)[1], K = 6, y = y, X = X),
+             pars = c("beta","sigma"))
 m_norm
-round(coef(mod1),2)
+round(coef(mod1), 2)
 
 #buffff!!!! Qué complicado!!!!
 
 #Alternativa con brms
-mod1b <- brm(mpg ~ hp + disp + gear + am, data=mtcars)
+mod1b <- brm(mpg ~ hp + disp + gear + am, data = mtcars)
 report(mod1b)
 #Eso es otra cosa!
 
 #Podemos hacer (casi) cualquier cosa que haríamos sobre el código en STAN
 #Cambiar previas
-mod1c <- brm(mpg ~ hp + disp + gear + am, data=mtcars, prior=c(set_prior("normal(0, 10)", class="b")), sample_prior = TRUE)
+mod1c <- brm(mpg ~ hp + disp + gear + am, data=mtcars, 
+             prior = c(set_prior("normal(0, 10)", class = "b")), sample_prior = TRUE)
 report(mod1c)
 
 #Previas específicas para cada coeficiente
-mod1d <- brm(mpg ~ hp + disp + gear + am, data=mtcars, prior=c(set_prior("normal(0, 10)", class="b", coef="hp"),
-                                                               set_prior("student_t(10, 0, 1)", class="b", coef="disp")))
+mod1d <- brm(mpg ~ hp + disp + gear + am, data = mtcars, 
+             prior = c(set_prior("normal(0, 10)", class = "b", coef = "hp"), 
+                       set_prior("student_t(10, 0, 1)", class = "b", coef = "disp")))
 report_mod1d <- report(mod1d)
 
 report_mod1d$Rhat_max
 
 #Podemos paralelizar de forma sencilla
-mod1d <- brm(mpg ~ hp + disp + gear + am, data=mtcars, prior=c(set_prior("normal(0, 10)", class="b", coef="hp"),
-                                                               set_prior("student_t(10, 0, 1)", class="b", coef="disp")), cores=4)
+mod1d <- brm(mpg ~ hp + disp + gear + am, data = mtcars, 
+             prior = c(set_prior("normal(0, 10)", class = "b", coef = "hp"),
+                       set_prior("student_t(10, 0, 1)", class = "b", coef = "disp")), 
+             cores = 4)
 report_mod1d <- report(mod1d)
 
 
@@ -102,7 +108,8 @@ hypothesis(mod1c, "disp > hp", class = "b")
 marginal_effects(mod1c)
 
 #Especialmente útiles para visualizar interacciones
-mod1e <- brm(mpg ~ hp *gear + disp + am, data=mtcars, prior=c(set_prior("normal(0, 10)", class="b")), sample_prior = TRUE)
+mod1e <- brm(mpg ~ hp * gear + disp + am, data = mtcars, 
+             prior = c(set_prior("normal(0, 10)", class = "b")), sample_prior = TRUE)
 report(mod1e)
 marginal_effects(mod1e)
 
@@ -153,7 +160,7 @@ datos1 <- read.csv2("base1.csv")
 names(datos1)
 datos1 <- nice_names(datos1)
 names(datos1)
-
+peek(datos1, 5)
 descriptive(datos1)
 
 datos1 <- fix.numerics(datos1)
@@ -204,9 +211,8 @@ plot(mca_pi ~ week, data=datos2)
 #Podemos estimar el percentil 95
 library(quantreg)
 mod4 <- rq(mca_pi ~ week, data=datos2, tau=0.95)
-report(mod4)  #Bug en clickR
-summary(mod4, se="rank")
-summary(mod4, covariance = TRUE)
+report(mod4)
+
 
 #Y en bayesiano
 mod4b <- brm(bf(mca_pi ~ week, quantile=0.95), data=datos2, family="asym_laplace")
