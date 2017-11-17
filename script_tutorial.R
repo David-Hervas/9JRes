@@ -160,7 +160,7 @@ datos1 <- read.csv2("base1.csv")
 names(datos1)
 datos1 <- nice_names(datos1)
 names(datos1)
-peek(datos1, 5)
+
 descriptive(datos1)
 
 datos1 <- fix.numerics(datos1)
@@ -168,6 +168,9 @@ descriptive(datos1)
 
 datos1 <- fix.factors(datos1)
 descriptive(datos1)
+
+#Explorar relaciones entre variables
+cluster_var(datos1)
 
 #Modelo predictivo para la variable RoboD
 mod2 <- glm(robod ~ tad + rs02m, family="binomial", data=datos1[datos1$dia==1,])
@@ -177,22 +180,33 @@ report(mod2)
 datos1$tad_sc <- scale(datos1$tad)[,1]
 datos1$rs02m_sc <- scale(datos1$rs02m)[,1]
 
-mod2 <- glm(robod ~ tad_sc + rs02m_sc, family="binomial", data=datos1[datos1$dia==1,])
+mod2 <- glm(robod ~ tad_sc + rs02m_sc, family = "binomial", data = datos1[datos1$dia == 1, ])
 report(mod2)
 
+#Qué pasa??
+layout(1)
+par(mar = c(5, 5, 4, 3))
+plot(tad_sc ~ rs02m_sc, data = datos1[datos1$dia == 1, ], 
+     col = c("red", "blue")[unclass(datos1$robod[datos1$dia == 1])],
+     pch = 16, las = 1, cex = 1.2)
+abline(-0.9, -2, lty = 2)  
+     
 #Y en bayesiano?
-mod2b <- brm(robod ~ tad_sc + rs02m_sc, family="bernoulli", data=datos1[datos1$dia==1,], prior=set_prior("normal(0, 10)", class="b"))
+mod2b <- brm(robod ~ tad_sc + rs02m_sc, family = "bernoulli", 
+             data = datos1[datos1$dia == 1, ], 
+             prior = set_prior("normal(0, 10)", class = "b"))
 report(mod2b)
 
 #Pero hay paquetes para hacer lo mismo sin estadística bayesiana...
 library(brglm)
-mod2c <- brglm(robod ~ tad_sc + rs02m_sc, data=datos1[datos1$dia==1,])
+mod2c <- brglm(robod ~ tad_sc + rs02m_sc, data = datos1[datos1$dia == 1, ])
 summary(mod2c)
 
-#El problema es la falta de flexibilidad. Resulta que el estudio es longitudinal, queremos un modelo
-#de medidas repetidas. En bayesiano es muy fácil, se añade al modelo y ya está
-
-mod3 <- brm(robod ~ tad_sc + rs02m_sc + dia + (dia|id), family="bernoulli", data=datos1, prior=set_prior("normal(0, 10)", class="b"))
+#El problema es la falta de flexibilidad. Resulta que el estudio es longitudinal, 
+#queremos un modelo de medidas repetidas. En bayesiano es muy fácil, se añade al modelo y ya está
+mod3 <- brm(robod ~ tad_sc + rs02m_sc + dia + (dia|id), 
+            family = "bernoulli", data = datos1, 
+            prior = set_prior("normal(0, 10)", class = "b"))
 report(mod3)
 
 
@@ -202,7 +216,7 @@ datos2 <- read.csv2("base2.csv")
 names(datos2)
 descriptive(datos2)
 
-datos2 <- datos2[datos2$week<44,]
+datos2 <- datos2[datos2$week < 44,]
 descriptive(datos2)
 
 plot(mca_pi ~ week, data=datos2)
@@ -210,14 +224,17 @@ plot(mca_pi ~ week, data=datos2)
 #Estamos interesados en determinar valores por encima de lo normal. 
 #Podemos estimar el percentil 95
 library(quantreg)
-mod4 <- rq(mca_pi ~ week, data=datos2, tau=0.95)
+mod4 <- rq(mca_pi ~ week + I(week^2), data = datos2, tau = 0.95)
 report(mod4)
-
+lines(seq(19, 41, 0.1), predict(mod4, data.frame(week = seq(19, 41, 0.1))),
+      lty = 2, col = "red", lwd = 2)
 
 #Y en bayesiano
-mod4b <- brm(bf(mca_pi ~ week, quantile=0.95), data=datos2, family="asym_laplace")
+mod4b <- brm(bf(mca_pi ~ week + I(week^2), quantile=0.95), data=datos2, 
+             prior = set_prior("normal(0, 10)", class = "b"),
+             family="asym_laplace")
 report(mod4b)
-
+make_stancode(bf(mca_pi ~ week + I(week^2), quantile=0.95), data=datos2, family="asym_laplace")
 
 #pero volvemos a tener que las observaciones no son independientes. Añadimos factor aleatorio.
 #Vamos a meter una previa para la desviación estándar del factor aleatorio y otra para el coeficiente
