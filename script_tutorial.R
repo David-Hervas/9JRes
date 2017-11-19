@@ -12,6 +12,7 @@ library(brms)
 library(clickR)
 
 ##Ejemplo básico con datos sencillos
+data(mtcars)
 descriptive(mtcars)
 mtcars <- fix.factors(mtcars)
 descriptive(mtcars)
@@ -97,7 +98,7 @@ mod1d <- brm(mpg ~ hp + disp + gear + am, data = mtcars,
              cores = 4)
 report_mod1d <- report(mod1d)
 
-
+report(mod1c)
 #Podemos contrastar hipótesis de manera muy flexible
 hypothesis(mod1c, "disp > 0", class = "b")
 hypothesis(mod1c, "disp < 0", class = "b")
@@ -246,6 +247,9 @@ report(mod4c)
 ##############Modelo de regresión ordinal
 datos3 <- read.csv2("base3.csv")
 datos3 <- nice_names(datos3)
+names(datos3)
+
+plot(density(datos3$staie, na.rm=TRUE))
 datos3$staie_o <- ordered(datos3$staie)
 
 library(ordinal)
